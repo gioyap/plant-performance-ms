@@ -19,6 +19,11 @@ const config = {
     },
     extend: {
       colors: {
+        dark: "#141414", //dark
+        dark2: "#282828", //light dark
+        dark3: "#3c3c3c", //very light dark
+        dark4: "#8c8c8c", //very light light dark
+        maintext: "white", //white
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -74,7 +79,7 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("tailwindcss-animated")],
 } satisfies Config;
 
 export default config;
