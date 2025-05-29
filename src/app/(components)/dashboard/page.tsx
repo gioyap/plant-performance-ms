@@ -1,40 +1,38 @@
-import { Button } from "@/src/components/ui/button";
-import { createClient } from "@/src/utils/supabase/server";
-import { InfoIcon } from "lucide-react";
-import { redirect } from "next/navigation";
+"use client";
+import React from "react";
+import { cn } from "@/src/lib/utils";
+import MainSidebar from "@/src/components/core/mainsidebar";
 import { signOutAction } from "../../actions";
+import { Button } from "@/src/components/ui/button";
 
-export default async function ProtectedPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect("/");
-  }
-
+export default function DashboardPage() {
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="w-full">
-        <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
-          <InfoIcon size="16" strokeWidth={2} />
-          This is a protected page that you can only see as an authenticated
-          user
+    <div
+      className={cn(
+        "mx-auto flex w-full min-h-screen flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800",
+        "h-[60vh]"
+      )}
+    >
+      <MainSidebar />
+      <div className="flex flex-1">
+        <div className="flex h-full w-full flex-1 flex-col gap-2 rounded-tl-2xl border border-neutral-200 bg-white p-2 md:p-10 dark:border-neutral-700 dark:bg-neutral-900">
+          <div className="flex gap-2">
+            {[...new Array(4)].map((_, idx) => (
+              <div
+                key={"first-array-demo-1" + idx}
+                className="h-20 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800"
+              ></div>
+            ))}
+          </div>
+          <div className="flex flex-1 gap-2">
+            {[...new Array(2)].map((_, idx) => (
+              <div
+                key={"second-array-demo-1" + idx}
+                className="h-full w-full animate-pulse rounded-lg bg-gray-100 dark:bg-neutral-800"
+              ></div>
+            ))}
+          </div>
         </div>
-      <form action={signOutAction}>
-        <Button type="submit">
-          Logout
-        </Button>
-      </form>
-
-      </div>
-      <div className="flex flex-col gap-2 items-start">
-        <h2 className="font-bold text-2xl mb-4">Your user details</h2>
-        <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-          {JSON.stringify(user, null, 2)}
-        </pre>
       </div>
     </div>
   );

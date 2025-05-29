@@ -9,8 +9,11 @@ const defaultUrl = process.env.NETLIFY_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "Plant Performance Management System",
+  description: "A centralized platform for tracking productivity, budgets, raw materials, labor, and operations at Fisher Farms Inc.",
+  icons: {
+    icon: "/favicon.ico"
+  }
 };
 
 const geistSans = Geist({
@@ -38,7 +41,7 @@ export default function RootLayout({
                 {children}
               </div>
 
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16 dark:bg-dark">
+              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-4 dark:bg-dark">
                 <p>
                   Powered by{" "}
                   <a
