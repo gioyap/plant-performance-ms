@@ -27,7 +27,7 @@ export default function Login() {
 			<div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-0">
 				<form
         action={handleSubmit}
-					className="flex flex-col w-full max-w-md p-8 rounded-xl shadow-2xl animate-jump-in animate-once animate-duration-1000 animate-ease-in dark:bg-dark border border-orange-300"
+					className="flex flex-col w-full max-w-md p-8 rounded-xl shadow-2xl animate-jump-in animate-once animate-duration-1000 animate-ease-in dark:bg-dark border border-orange-300 dark:border-dark4"
 				>
 					<h1 className="text-3xl lg:text-4xl font-bold text-center">
 						Sign in
