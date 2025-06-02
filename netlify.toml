@@ -1,0 +1,14 @@
+[build]
+  functions = "netlify/functions"
+  publish = ".next"
+    
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions."ping-supabase"]
+  schedule = "0 0 1,6,11,16,21,26 * *"  # Runs at midnight on the 1st, 6th, 11th, 16th, 21st, 26th of every month
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
