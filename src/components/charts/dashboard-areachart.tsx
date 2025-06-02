@@ -12,20 +12,20 @@ import { createClient } from "@/src/utils/supabase/client"
 
 const chartConfig = {
   abp: {
-    label: "Abp",
+    label: "ABP",
     color: "hsl(var(--chart-1))",
   },
   totalrm: {
     label: "Total RM",
     color: "hsl(var(--chart-2))",
   },
-    lasttotalrm: {
-    label: "Abp",
-    color: "hsl(var(--chart-4))",
-  },
     lastabp: {
-    label: "Abp",
+    label: "Last ABP",
     color: "hsl(var(--chart-3))",
+  },
+    lasttotalrm: {
+    label: "Last Total RM",
+    color: "hsl(var(--chart-4))",
   },
 } satisfies ChartConfig
 
@@ -65,27 +65,17 @@ export function DashboardChart() {
   }, [])
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-h-96">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <CardTitle>Area Chart - Interactive</CardTitle>
+          <CardTitle>Raw Mat Volume</CardTitle>
           <CardDescription>
-            Showing total visitors for the last {timeRange}
+            Showing total computation of Volume this year
           </CardDescription>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-[160px] rounded-lg sm:ml-auto">
-            <SelectValue placeholder="Select range" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="90d">Last 3 months</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-          </SelectContent>
-        </Select>
       </CardHeader>
 
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <CardContent className="px-2 sm:px-6 sm:pt-6">
         {loading ? (
           <div className="text-center text-muted-foreground text-sm">Loading chart...</div>
         ) : (

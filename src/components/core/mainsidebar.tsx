@@ -54,23 +54,6 @@ export default function MainSidebar() {
             ))}
           </div>
         </div>
-        <div>
-          <SidebarLink
-            link={{
-              label: "Manu Arora",
-              href: "#",
-              icon: (
-                <img
-                  src="https://assets.aceternity.com/manu.png"
-                  className="h-7 w-7 shrink-0 rounded-full"
-                  width={50}
-                  height={50}
-                  alt="Avatar"
-                />
-              ),
-            }}
-          />
-        </div>
       </SidebarBody>
     </Sidebar>
   );
