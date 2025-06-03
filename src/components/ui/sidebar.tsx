@@ -1,16 +1,10 @@
 "use client";
 import { cn } from "@/src/lib/utils";
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, createContext, useContext, JSX } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { IconMenu2, IconX, IconChevronDown } from "@tabler/icons-react";
 import { signOutAction } from "@/src/app/actions";
-
-interface Links {
-  label: string;
-  href?: string;
-  icon: React.JSX.Element | React.ReactNode;
-  type?: "link" | "logout" | string;
-}
+import { Links } from "@/src/lib/types";
 
 interface SidebarContextProps {
   open: boolean;
@@ -165,9 +159,10 @@ export const SidebarLink = ({
   className?: string;
 }) => {
   const { open, animate } = useSidebar();
+  const [submenuOpen, setSubmenuOpen] = useState(false);
 
+  // Handle logout
   if (link.type === "logout") {
-    // Render logout form with server action
     return (
       <form action={signOutAction} className={className} {...props}>
         <button
@@ -189,26 +184,53 @@ export const SidebarLink = ({
     );
   }
 
-  // Default: normal link
+  const hasChildren = link.children && link.children.length > 0;
+
   return (
-    <a
-      href={link.href}
-      className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2",
-        className
-      )}
-      {...props}
-    >
-      {link.icon}
-      <motion.span
-        animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
-          opacity: animate ? (open ? 1 : 0) : 1,
-        }}
-        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+    <div className="w-full">
+      <button
+        onClick={() => hasChildren ? setSubmenuOpen(!submenuOpen) : undefined}
+        className={cn(
+          "flex w-full items-center justify-between py-2 group/sidebar text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded px-2",
+          className
+        )}
+        {...props}
       >
-        {link.label}
-      </motion.span>
-    </a>
+        <div className="flex items-center gap-2">
+          {link.icon}
+          <motion.span
+            animate={{
+              display: animate ? (open ? "inline-block" : "none") : "inline-block",
+              opacity: animate ? (open ? 1 : 0) : 1,
+            }}
+            className="text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+          >
+            {link.label}
+          </motion.span>
+        </div>
+        {hasChildren && open && (
+          <IconChevronDown
+            className={cn(
+              "transition-transform duration-200",
+              submenuOpen ? "rotate-180" : ""
+            )}
+          />
+        )}
+      </button>
+
+      {hasChildren && submenuOpen && (
+        <div className="ml-8 mt-1 flex flex-col gap-1">
+          {(link.children ?? []).map((child, idx) => (
+            <a
+              key={idx}
+              href={child.href}
+              className="text-sm text-neutral-600 dark:text-neutral-300 hover:underline"
+            >
+              {child.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };

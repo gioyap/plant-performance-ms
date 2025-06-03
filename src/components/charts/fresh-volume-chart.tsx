@@ -29,7 +29,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function DashboardChart() {
+export function FreshVolumeChart() {
   const [data, setData] = React.useState<ChartRow[]>([])
 
   const fetchChartData = async () => {

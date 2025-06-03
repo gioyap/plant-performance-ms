@@ -2,7 +2,9 @@
 import React, { useState } from "react";
 import {
   IconArrowLeft,
+  IconBox,
   IconBrandTabler,
+  IconDatabase,
   IconSettings,
   IconUserBolt,
 } from "@tabler/icons-react";
@@ -17,6 +19,26 @@ export default function MainSidebar() {
       icon: (
         <IconBrandTabler className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
       ),
+    },
+    {
+      label: "Databank",
+      icon: <IconDatabase className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />,
+      children: [
+        {
+          label: "Total Fresh Frozen Volume",
+          href: "/total-fresh-frozen-volume",
+        },
+      ],
+    },
+    {
+      label: "MF RM Volume",
+      icon: <IconBox className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />,
+      children: [
+        {
+          label: "Total Fresh Volume",
+          href: "/fresh-volume",
+        },
+      ],
     },
     {
       label: "Profile",
@@ -62,7 +84,7 @@ export default function MainSidebar() {
 const Logo = () => {
   return (
     <a
-      href="/dashboard"
+      href="/fresh-volume"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white"
     >
       <img src="/favicon.ico" alt="FFI PPMS Logo" className="h-6 w-6" />
@@ -80,7 +102,7 @@ const Logo = () => {
 const LogoIcon = () => {
   return (
     <a
-      href="/dashboard"
+      href="/fresh-volume"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white"
     >
       <img src="/favicon.ico" alt="FFI PPMS Logo" className="h-6 w-6" />

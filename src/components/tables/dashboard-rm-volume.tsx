@@ -7,19 +7,12 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import * as XLSX from "xlsx";
 import { DropdownMenuSub, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../ui/dropdown-menu";
-
-interface RMVolumeRow {
-  id: number;
-  abp: number;
-  totalrm: number;
-  lastabp: number;
-  lasttotalrm: number;
-}
+import Link from "next/link";
+import { RMVolumeRow } from "@/src/lib/types";
 
 export default function DashboardRMVolumeTable() {
   const supabase = createClient();
   const [data, setData] = useState<RMVolumeRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -35,8 +28,6 @@ export default function DashboardRMVolumeTable() {
       } else {
         setData(data as RMVolumeRow[]);
       }
-
-      setLoading(false);
     };
 
     fetchData();
@@ -127,8 +118,6 @@ export default function DashboardRMVolumeTable() {
     reader.readAsBinaryString(file);
   };
 
-  if (loading) return <p className="p-4">Loading...</p>;
-
   return (
     <Card className="p-4 w-full overflow-x-auto">
      <div className="mb-4">
@@ -141,6 +130,9 @@ export default function DashboardRMVolumeTable() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={handleAddRow}>+ Add Row</DropdownMenuItem>
+              <Link href="/fresh-volume">
+                <DropdownMenuItem>Modify</DropdownMenuItem>
+              </Link>
               <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
               <label htmlFor="excelUpload">
                 <DropdownMenuItem asChild>
