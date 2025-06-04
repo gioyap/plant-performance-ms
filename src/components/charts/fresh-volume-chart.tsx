@@ -11,22 +11,14 @@ import { createClient } from "@/src/utils/supabase/client"
 import { ChartRow } from "@/src/lib/types"
 
 const chartConfig = {
-  abp: {
-    label: "ABP",
-    color: "hsl(var(--chart-1))",
-  },
-  totalrm: {
-    label: "Total RM",
-    color: "hsl(var(--chart-2))",
-  },
-    lastabp: {
-    label: "Last ABP",
-    color: "hsl(var(--chart-3))",
-  },
-    lasttotalrm: {
-    label: "Last Total RM",
-    color: "hsl(var(--chart-4))",
-  },
+  abp: { label: "ABP", color: "hsl(var(--chart-1))" },
+  master_plan: { label: "Master Plan", color: "hsl(var(--chart-2))" },
+  actual_received: { label: "Actual Received", color: "hsl(var(--chart-3))" },
+  w_requirements: { label: "W Requirements", color: "hsl(var(--chart-4))" },
+  excess: { label: "Excess", color: "hsl(var(--chart-5))" },
+  advance_prod: { label: "Advance Prod", color: "hsl(var(--chart-6))" },
+  safekeep: { label: "Safekeep", color: "hsl(var(--chart-7))" },
+  comp_to_master_plan: { label: "Comp to MPlan", color: "hsl(var(--chart-8))" },
 } satisfies ChartConfig
 
 export function FreshVolumeChart() {
@@ -36,17 +28,25 @@ export function FreshVolumeChart() {
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .from("interactions_charts")
-      .select("*")
-      .order("id", { ascending: true })
+      .from("mf_raw_sizes")
+      .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan")
+      .eq("size", "total_volume")
+      .order("date", { ascending: true })
 
     if (error) {
       console.error("Failed to fetch chart data:", error.message)
     } else {
-      setData(data as ChartRow[])
-    }
-  }
+            const monthOrder = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ]
+      const sortedData = (data as ChartRow[]).sort((a, b) =>
+        monthOrder.indexOf(a.date) - monthOrder.indexOf(b.date)
+      )
 
+      setData(sortedData)
+          }
+  }
   React.useEffect(() => {
     fetchChartData()
   }, [])
@@ -63,78 +63,48 @@ export function FreshVolumeChart() {
       </CardHeader>
 
       <CardContent className="px-2 sm:px-6 sm:pt-6">
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="fillabp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-abp)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-abp)" stopOpacity={0.1} />
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[250px] w-full"
+        >
+          <AreaChart data={data}>
+            <defs>
+              {Object.keys(chartConfig).map((key) => (
+                <linearGradient id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1" key={key}>
+                  <stop offset="5%" stopColor={`var(--color-${key})`} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={`var(--color-${key})`} stopOpacity={0.1} />
                 </linearGradient>
-                <linearGradient id="fillrm" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-totalrm)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-totalrm)" stopOpacity={0.1} />
-                </linearGradient>
-                   <linearGradient id="filllastabp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-lastabp)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-lastabp)" stopOpacity={0.1} />
-                </linearGradient>
-                   <linearGradient id="filllastrm" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-lasttotalrm)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-lasttotalrm)" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={0}
-            
-              />
-              <ChartTooltip
-                cursor={false}
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(value) => `${value}`}
-                    indicator="dot"
-                  />
-                }
-              />
+              ))}
+            </defs>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={0}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(value) => `${value}`}
+                  indicator="dot"
+                />
+              }
+            />
+            {Object.keys(chartConfig).map((key) => (
               <Area
-                dataKey="abp"
+                key={key}
+                dataKey={key}
                 type="natural"
-                fill="url(#fillabp)"
-                stroke="var(--color-abp)"
-                stackId="a"
+                fill={`url(#fill-${key})`}
+                stroke={`var(--color-${key})`}
               />
-              <Area
-                dataKey="totalrm"
-                type="natural"
-                fill="url(#fillrm)"
-                stroke="var(--color-totalrm)"
-                stackId="a"
-              />
-                <Area
-                dataKey="lastabp"
-                type="natural"
-                fill="url(#filllastabp)"
-                stroke="var(--color-lastabp)"
-                stackId="a"
-              />
-              <Area
-                dataKey="lasttotalrm"
-                type="natural"
-                fill="url(#filllastrm)"
-                stroke="var(--color-lasttotalrm)"
-                stackId="a"
-              />
-              <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
-          </ChartContainer>   
+            ))}
+            <ChartLegend content={<ChartLegendContent />} />
+          </AreaChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   )

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { SkeletonLoading } from "@/src/components/core/loading";
-
 import Size100gBelowPage from "@/src/components/tables/(mf_sizes)/size-100g-below";
 import Size100g260gPage from "@/src/components/tables/(mf_sizes)/size-100g-260g";
 import Size260g350gPage from "@/src/components/tables/(mf_sizes)/size-260g-350g";

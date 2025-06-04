@@ -11,6 +11,7 @@ export interface FreshVolumeRow {
   advance_prod: number;
   safekeep: number;
   comp_to_master_plan: number;
+  size: string;
 }
 
 export interface RMVolumeRow {
@@ -24,9 +25,13 @@ export interface RMVolumeRow {
 export interface ChartRow {
   date: string
   abp: number
-  totalrm: number
-    lasttotalrm: number
-      lastabp: number
+  master_plan: number
+  actual_received: number
+  w_requirements: number
+  excess: number
+  advance_prod: number
+  safekeep: number
+  comp_to_master_plan: number
 }
 
 export interface Links {

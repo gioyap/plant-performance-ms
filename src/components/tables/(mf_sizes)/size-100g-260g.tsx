@@ -51,39 +51,104 @@ export default function Size100g260gPage() {
     }
   };
 
-  const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DashboardRMVolume");
-    XLSX.writeFile(wb, "mf_raw_sizes.xlsx");
-  };
+const handleExport = async () => {
+  const { data, error } = await supabase
+    .from("mf_raw_sizes")
+    .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
+    .eq("size", "100g-260g")
+    .order("id", { ascending: true });
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  if (error) {
+    console.error("Export failed:", error.message);
+    return;
+  }
 
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const importedData: FreshVolumeRow[] = XLSX.utils.sheet_to_json(ws);
+  const worksheet = XLSX.utils.json_to_sheet(data || []);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  XLSX.writeFile(workbook, "100g-260g-volume.xlsx");
+};
 
-      for (const row of importedData) {
-        const { error } = await supabase
-          .from("mf_raw_sizes")
-          .upsert(row, { onConflict: "id" }); // update if ID exists
-        if (error) {
-          console.error("Import error:", error.message);
-        }
+const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    const bstr = evt.target?.result;
+    if (!bstr || typeof bstr !== "string") return;
+
+    const workbook = XLSX.read(bstr, { type: "binary" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const excelData = XLSX.utils.sheet_to_json<any>(worksheet, { header: 0 });
+
+    // Normalize header: lowercase all column names
+    const normalizedExcel = excelData.map((row: any) => {
+      const obj: any = {};
+      for (const key in row) {
+        obj[key.trim().toLowerCase()] = row[key];
       }
+      return obj;
+    });
 
-      // Optional: refresh the local data
-      const { data, error } = await supabase.from("mf_raw_sizes").select("*").order("id");
-      if (!error) setData(data as FreshVolumeRow[]);
-    };
-    reader.readAsBinaryString(file);
+    // Fetch existing rows only for size '100g-260g'
+    const { data: existingRows, error } = await supabase
+      .from("mf_raw_sizes")
+      .select("id, date")
+      .eq("size", "100g-260g");
+
+    if (error) {
+      console.error("Failed to fetch existing data:", error.message);
+      return;
+    }
+
+    const updates = normalizedExcel.map((row) => {
+      const match = existingRows?.find(
+        (r) => r.date.toLowerCase() === row.date?.toLowerCase()
+      );
+
+      if (!match) return null;
+
+      return {
+        id: match.id,
+        update: {
+          abp: Number(row.abp) || 0,
+          master_plan: Number(row.master_plan) || 0,
+          actual_received: Number(row.actual_received) || 0,
+          w_requirements: Number(row.w_requirements) || 0,
+          excess: Number(row.excess) || 0,
+          advance_prod: Number(row.advance_prod) || 0,
+          safekeep: Number(row.safekeep) || 0,
+          comp_to_master_plan: Number(row.comp_to_master_plan) || 0,
+        },
+      };
+    }).filter(Boolean);
+
+    for (const u of updates) {
+      const { error } = await supabase
+        .from("mf_raw_sizes")
+        .update(u!.update)
+        .eq("id", u!.id)
+        .eq("size", "100g-260g"); // <- Ensure correct size match
+
+      if (error) {
+        console.error(`Failed to update row with id ${u!.id}:`, error.message);
+      }
+    }
+
+    // Refresh data
+    const refreshed = await supabase
+      .from("mf_raw_sizes")
+      .select("id, date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
+      .eq("size", "100g-260g")
+      .order("id", { ascending: true });
+
+    setData(refreshed.data as FreshVolumeRow[]);
   };
+
+  reader.readAsBinaryString(file);
+};
 
   return (
     <Card className="p-4 w-full overflow-x-auto">
@@ -104,10 +169,10 @@ export default function Size100g260gPage() {
                   </DropdownMenuItem>
                   <input
                     type="file"
-                    accept=".xlsx, .xls"
-                    onChange={handleImport}
-                    className="hidden"
                     id="excelUpload"
+                    accept=".xlsx, .xls"
+                    className="hidden"
+                    onChange={handleImport}
                   />
                 </label>
               </DropdownMenuGroup>

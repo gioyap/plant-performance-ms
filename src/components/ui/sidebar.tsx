@@ -191,7 +191,7 @@ export const SidebarLink = ({
       <button
         onClick={() => hasChildren ? setSubmenuOpen(!submenuOpen) : undefined}
         className={cn(
-          "flex w-full items-center justify-between py-2 group/sidebar text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded px-2",
+          "flex w-full items-center justify-between py-2 group/sidebar text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded",
           className
         )}
         {...props}

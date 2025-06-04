@@ -2,19 +2,15 @@
 
 import { createClient } from "@/src/utils/supabase/client";
 import React, { useEffect, useState } from "react";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import * as XLSX from "xlsx";
-import { DropdownMenuSub, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import Link from "next/link";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { RMVolumeRow } from "@/src/lib/types";
 
 export default function DashboardRMVolumeTable() {
   const supabase = createClient();
   const [data, setData] = useState<RMVolumeRow[]>([]);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,36 +48,6 @@ export default function DashboardRMVolumeTable() {
     if (error) {
       console.error("Failed to update value:", error.message);
     }
-  };
-
-  const handleAddRow = async () => {
-    const { data: insertedData, error } = await supabase
-      .from("dashboard-rm-volume")
-      .insert([{ abp: 0, totalrm: 0, lastabp: 0, lasttotalrm: 0 }])
-      .select();
-
-    if (error) {
-      console.error("Failed to add row:", error.message);
-    } else if (insertedData && insertedData.length > 0) {
-      setData((prev) => [...prev, insertedData[0] as RMVolumeRow]);
-    }
-  };
-
-  const totalPages = Math.ceil(data.length / rowsPerPage);
-  const paginatedData = data.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  const handleRowsPerPageChange = (value: number) => {
-    setRowsPerPage(value);
-    setCurrentPage(1); // Reset to page 1 on change
   };
 
   const handleExport = () => {
@@ -129,10 +95,6 @@ export default function DashboardRMVolumeTable() {
             <DropdownMenuLabel>Table Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={handleAddRow}>+ Add Row</DropdownMenuItem>
-              <Link href="/fresh-volume">
-                <DropdownMenuItem>Modify</DropdownMenuItem>
-              </Link>
               <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
               <label htmlFor="excelUpload">
                 <DropdownMenuItem asChild>
@@ -146,19 +108,6 @@ export default function DashboardRMVolumeTable() {
                   id="excelUpload"
                 />
               </label>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Rows per page</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {[5, 10, 20, 50].map((num) => (
-                    <DropdownMenuItem
-                      key={num}
-                      onClick={() => handleRowsPerPageChange(num)}
-                    >
-                      Show {num}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -174,7 +123,7 @@ export default function DashboardRMVolumeTable() {
           </tr>
         </thead>
         <tbody>
-          {paginatedData.map((row) => (
+          {data.map((row) => (
             <tr key={row.id} className="text-center">
               {(["abp", "totalrm", "lastabp", "lasttotalrm"] as const).map(
                 (field) => (
@@ -194,31 +143,6 @@ export default function DashboardRMVolumeTable() {
           ))}
         </tbody>
       </table>
-
-      {/* Pagination Controls */}
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} className={currentPage === 1 ? "pointer-events-none opacity-50" : ""} />
-          </PaginationItem>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) =>
-            (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) ? (
-              <PaginationItem key={page}>
-                <PaginationLink href="#" isActive={page === currentPage} onClick={(e) => { e.preventDefault(); handlePageChange(page); }}>{page}</PaginationLink>
-              </PaginationItem>
-            ) : (page === currentPage - 2 || page === currentPage + 2) ? (
-              <PaginationItem key={`ellipsis-${page}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            ) : null
-          )}
-
-          <PaginationItem>
-            <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""} />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
     </Card>
   );
 }
