@@ -2,11 +2,12 @@
 
 import { createClient } from "@/src/utils/supabase/client";
 import React, { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../ui/dropdown-menu";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
 import { FreshVolumeRow } from "@/src/lib/types";
+import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
 
 export default function Size100g260gPage() {
   const supabase = createClient();
@@ -39,6 +40,7 @@ export default function Size100g260gPage() {
     const updatedData = data.map((row) =>
       row.id === id ? { ...row, [field]: newValue } : row
     );
+    toast.success("Updated Complete!")
     setData(updatedData);
 
     const { error } = await supabase
@@ -46,27 +48,16 @@ export default function Size100g260gPage() {
       .update({ [field]: newValue })
       .eq("id", id);
 
-    if (error) {
-      console.error("Failed to update value:", error.message);
+      if (error) {
+      toast.error("Failed to update value");
     }
   };
 
-const handleExport = async () => {
-  const { data, error } = await supabase
-    .from("mf_raw_sizes")
-    .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
-    .eq("size", "100g-260g")
-    .order("id", { ascending: true });
-
-  if (error) {
-    console.error("Export failed:", error.message);
-    return;
-  }
-
+const handleExport = () => {
   const worksheet = XLSX.utils.json_to_sheet(data || []);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  XLSX.writeFile(workbook, "100g-260g-volume.xlsx");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "100g-260g");
+  XLSX.writeFile(workbook, "100g-260g.xlsx");
 };
 
 const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,85 +65,41 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = async (evt) => {
-    const bstr = evt.target?.result;
-    if (!bstr || typeof bstr !== "string") return;
-
-    const workbook = XLSX.read(bstr, { type: "binary" });
+  reader.onload = async (event) => {
+    const data = new Uint8Array(event.target?.result as ArrayBuffer);
+    const workbook = XLSX.read(data, { type: "array" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const excelData = XLSX.utils.sheet_to_json<any>(worksheet, { header: 0 });
+    const jsonData: FreshVolumeRow[] = XLSX.utils.sheet_to_json(worksheet);
 
-    // Normalize header: lowercase all column names
-    const normalizedExcel = excelData.map((row: any) => {
-      const obj: any = {};
-      for (const key in row) {
-        obj[key.trim().toLowerCase()] = row[key];
-      }
-      return obj;
-    });
+    await Promise.all(
+      jsonData.map(async (row) => {
+        const { id, size: _, ...rest } = row;
+        if (!id) return null;
 
-    // Fetch existing rows only for size '100g-260g'
-    const { data: existingRows, error } = await supabase
-      .from("mf_raw_sizes")
-      .select("id, date")
-      .eq("size", "100g-260g");
+        const { error } = await supabase
+          .from("mf_raw_sizes")
+          .upsert({ id, size: "100g-260g", ...rest }, { onConflict: "id" });
 
-    if (error) {
-      console.error("Failed to fetch existing data:", error.message);
-      return;
-    }
+        if (error) {
+          console.error(`Failed to import row id ${id}:`, error.message);
+          toast.error(`Import failed at row id ${id}`);
+        }
 
-    const updates = normalizedExcel.map((row) => {
-      const match = existingRows?.find(
-        (r) => r.date.toLowerCase() === row.date?.toLowerCase()
-      );
+        return row;
+      })
+    );
 
-      if (!match) return null;
-
-      return {
-        id: match.id,
-        update: {
-          abp: Number(row.abp) || 0,
-          master_plan: Number(row.master_plan) || 0,
-          actual_received: Number(row.actual_received) || 0,
-          w_requirements: Number(row.w_requirements) || 0,
-          excess: Number(row.excess) || 0,
-          advance_prod: Number(row.advance_prod) || 0,
-          safekeep: Number(row.safekeep) || 0,
-          comp_to_master_plan: Number(row.comp_to_master_plan) || 0,
-        },
-      };
-    }).filter(Boolean);
-
-    for (const u of updates) {
-      const { error } = await supabase
-        .from("mf_raw_sizes")
-        .update(u!.update)
-        .eq("id", u!.id)
-        .eq("size", "100g-260g"); // <- Ensure correct size match
-
-      if (error) {
-        console.error(`Failed to update row with id ${u!.id}:`, error.message);
-      }
-    }
-
-    // Refresh data
-    const refreshed = await supabase
-      .from("mf_raw_sizes")
-      .select("id, date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
-      .eq("size", "100g-260g")
-      .order("id", { ascending: true });
-
-    setData(refreshed.data as FreshVolumeRow[]);
+    toast.success("Import successful");
+    setData(jsonData);
   };
 
-  reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
 };
 
   return (
     <Card className="p-4 w-full overflow-x-auto">
-        <div className="flex justify-between items-center mb-4">
+       <div className="flex justify-between items-center mb-4">
           <p className="text-xs italic text-gray-500 dark:text-gray-400 font-semibold">100g-260g</p>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -163,24 +110,26 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
-                <label htmlFor="excelUpload">
-                  <DropdownMenuItem asChild>
-                    <span>Import</span>
-                  </DropdownMenuItem>
-                  <input
-                    type="file"
-                    id="excelUpload"
-                    accept=".xlsx, .xls"
-                    className="hidden"
-                    onChange={handleImport}
-                  />
-                </label>
+                <DropdownMenuItem asChild>
+                  <FileInputWrapper>
+                    <label htmlFor="excelUpload" className="w-full pl-2 relative flex select-none items-center rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-dark2">
+                      Import
+                    </label>
+                    <input
+                      type="file"
+                      accept=".xlsx, .xls"
+                      id="excelUpload"
+                      onChange={handleImport}
+                      className="hidden"
+                    />
+                  </FileInputWrapper>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-      <table className="min-w-full border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded">
+      <table className="min-w-full border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded overflow-x-auto">
        <thead>
         <tr className="bg-orange-500 text-white dark:bg-dark3 text-center">
           <th className="px-4 py-2 border">Date</th>
@@ -215,7 +164,7 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     type="number"
                     defaultValue={row[field]}
                     onBlur={(e) => handleUpdate(row.id, field, e.target.value)}
-                    className="w-full text-center bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full text-center bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
                 </td>
               ))}
@@ -226,3 +175,6 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     </Card>
   );
 }
+const FileInputWrapper = ({ children }: { children: React.ReactNode }) => {
+  return <span>{children}</span>;
+};

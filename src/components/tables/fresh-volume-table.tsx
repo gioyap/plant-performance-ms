@@ -19,7 +19,7 @@ useEffect(() => {
     const { data, error } = await supabase
       .from("mf_raw_sizes")
       .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
-      .eq("size", "total_volume");
+      .neq("size", "total_volume");
 
     if (error) {
       console.error("Failed to fetch input rows:", error.message);
@@ -102,39 +102,23 @@ useEffect(() => {
   fetchData();
 }, [supabase]);
 
-  const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "DashboardRMVolume");
-    XLSX.writeFile(wb, "mf_raw_sizes.xlsx");
-  };
+const handleExport = async () => {
+  const { data, error } = await supabase
+    .from("mf_raw_sizes")
+    .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
+    .eq("size", "total_volume")
+    .order("id", { ascending: true });
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  if (error) {
+    console.error("Export failed:", error.message);
+    return;
+  }
 
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const importedData: FreshVolumeRow[] = XLSX.utils.sheet_to_json(ws);
-
-      for (const row of importedData) {
-        const { error } = await supabase
-          .from("mf_raw_sizes")
-          .upsert(row, { onConflict: "id" }); // update if ID exists
-        if (error) {
-          console.error("Import error:", error.message);
-        }
-      }
-
-      // Optional: refresh the local data
-      const { data, error } = await supabase.from("mf_raw_sizes").select("*").order("id");
-      if (!error) setData(data as FreshVolumeRow[]);
-    };
-    reader.readAsBinaryString(file);
-  };
+  const worksheet = XLSX.utils.json_to_sheet(data || []);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+  XLSX.writeFile(workbook, "total-fresh-volume.xlsx");
+};
 
   return (
     <Card className="p-4 w-full overflow-x-auto">
@@ -151,18 +135,6 @@ useEffect(() => {
               <DropdownMenuItem>Modify</DropdownMenuItem>
               </Link>
               <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
-              <label htmlFor="excelUpload">
-                <DropdownMenuItem asChild>
-                  <span>Import</span>
-                </DropdownMenuItem>
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  onChange={handleImport}
-                  className="hidden"
-                  id="excelUpload"
-                />
-              </label>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
