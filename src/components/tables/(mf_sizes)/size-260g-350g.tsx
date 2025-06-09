@@ -8,6 +8,7 @@ import { Card } from "../../ui/card";
 import { FreshVolumeRow } from "@/src/lib/types";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
+import EditableCell, { beforeExcessFields, afterExcessFields } from "../../core/editablecell";
 
 export default function Size260g350gPage() {
   const supabase = createClient();
@@ -128,7 +129,6 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
       <table className="min-w-full border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded overflow-x-auto">
        <thead>
         <tr className="bg-orange-500 text-white dark:bg-dark3 text-center">
@@ -137,40 +137,50 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <th className="px-4 py-2 border">Master Plan</th>
           <th className="px-4 py-2 border">Actual Received</th>
           <th className="px-4 py-2 border">W Requirements</th>
-          <th className="px-4 py-2 border">Excess</th>
+          <th className="px-8 py-2 border">Excess</th>
           <th className="px-4 py-2 border">Advance Prod</th>
           <th className="px-4 py-2 border">Safekeep</th>
-          <th className="px-4 py-2 border">Comp to MPlan</th>
+          <th className="px-8 py-2 border">Comp to MPlan</th>
         </tr>
         </thead>
-        <tbody>
-          {data.map((row) => (
-            <tr key={row.id} className="text-center">
-              <td className="px-4 py-2 border">{row.date}</td>
-              {(
-                [
-                  "abp",
-                  "master_plan",
-                  "actual_received",
-                  "w_requirements",
-                  "excess",
-                  "advance_prod",
-                  "safekeep",
-                  "comp_to_master_plan",
-                ] as const
-              ).map((field) => (
-                <td key={`${row.id}-${field}`} className="px-4 py-2 border">
-                  <input
-                    type="number"
-                    defaultValue={row[field]}
-                    onBlur={(e) => handleUpdate(row.id, field, e.target.value)}
-                    className="w-full text-center bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+          <tbody>
+            {data.map((row:any) => (
+              <tr key={row.id} className="text-center">
+                <td className="px-4 py-2 border">{row.date}</td>
+
+                {/* Before Excess */}
+                {beforeExcessFields.map((field) => (
+                  <EditableCell
+                    key={`${row.id}-${field}`}
+                    value={row[field]}
+                    onBlur={(val) => handleUpdate(row.id, field, val)}
                   />
+                ))}
+                {/* Excess Column */}
+                <td className="border">
+                  {Math.round(
+                    row.actual_received > row.master_plan
+                      ? row.actual_received - row.master_plan
+                      : 0
+                  )}
                 </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
+                {/* After Excess */}
+                {afterExcessFields.map((field) => (
+                  <EditableCell
+                    key={`${row.id}-${field}`}
+                    value={row[field]}
+                    onBlur={(val) => handleUpdate(row.id, field, val)}
+                  />
+                ))}
+                {/* /* Comp to Master Plan - calculated percentage */}
+                <td className="border">
+                  {row.master_plan > 0
+                    ? `${Math.round((row.actual_received / row.master_plan) * 100)}%`
+                    : "0%"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
       </table>
     </Card>
   );
