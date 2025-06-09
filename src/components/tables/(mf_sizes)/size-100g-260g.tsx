@@ -47,7 +47,7 @@ const handleUpdate = async (
     // ⬇ Calculate excess
     const excess =
       updatedRow.actual_received > updatedRow.master_plan
-        ? updatedRow.actual_received - updatedRow.master_plan
+        ? Math.round(updatedRow.actual_received - updatedRow.master_plan)
         : 0;
 
     // ⬇ Calculate % compliance to master plan
