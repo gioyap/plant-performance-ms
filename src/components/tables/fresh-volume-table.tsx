@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { FreshVolumeRow } from "@/src/lib/types";
 import Link from "next/link";
+import { allFields } from "../core/editablecell";
 
 export default function FreshVolumeTable() {
   const supabase = createClient();
@@ -158,18 +159,7 @@ const handleExport = async () => {
           {data.map((row) => (
             <tr key={`${row.date}-${row.size}`}>
               <td className="px-4 py-2 border">{row.date}</td>
-              {(
-                [
-                  "abp",
-                  "master_plan",
-                  "actual_received",
-                  "w_requirements",
-                  "excess",
-                  "advance_prod",
-                  "safekeep",
-                  "comp_to_master_plan",
-                ] as const
-              ).map((field) => (
+              {allFields.map((field) => (
                  <td key={`${row.date}-${row.size}-${field}`} className="px-4 py-2 border">
                  <span className="block w-full text-center">
                     {typeof row[field] === "number"

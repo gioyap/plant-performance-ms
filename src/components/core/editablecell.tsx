@@ -5,12 +5,20 @@ type EditableCellProps = {
   onBlur: (val: string) => void;
 };
 
-export const beforeExcessFields = ["abp", "master_plan", "actual_received", "w_requirements"] as const;
-export const afterExcessFields = ["advance_prod", "safekeep"] as const;
+export const allFields = [
+  "abp",
+  "master_plan",
+  "actual_received",
+  "w_requirements",
+  "excess", // non-editable
+  "advance_prod",
+  "safekeep",
+  "comp_to_master_plan", // non-editable with %
+] as const;
 
 const EditableCell: React.FC<EditableCellProps> = ({ value, onBlur }) => {
   return (
-    <td className="border">
+    <td>
       <input
         type="number"
         defaultValue={Math.round(value)}

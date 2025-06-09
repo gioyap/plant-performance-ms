@@ -8,7 +8,7 @@ import { Card } from "../../ui/card";
 import { FreshVolumeRow } from "@/src/lib/types";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
-import EditableCell, { beforeExcessFields, afterExcessFields } from "../../core/editablecell";
+import EditableCell, { allFields } from "../../core/editablecell";
 
 export default function Size350g450gPage() {
   const supabase = createClient();
@@ -186,31 +186,25 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
           <th className="px-8 py-2 border">Comp to MPlan</th>
         </tr>
         </thead>
-          <tbody>
-            {data.map((row:any) => (
-              <tr key={row.id} className="text-center">
+        <tbody>
+            {data.map((row) => (
+              <tr key={`${row.date}-${row.size}`} className="text-center">
                 <td className="px-4 py-2 border">{row.date}</td>
-
-                {/* Before Excess */}
-                {beforeExcessFields.map((field) => (
-                  <EditableCell
+                {allFields.map((field) => (
+                  <td key={`${row.date}-${row.size}-${field}`} className="py-2 border">
+                    {field === "comp_to_master_plan" ? (
+                      <span className="block w-full text-center">
+                        {field === "comp_to_master_plan" ? `${row[field]}%` : row[field]}
+                      </span>
+                    ) : (
+                       <EditableCell
                     key={`${row.id}-${field}`}
                     value={row[field]}
                     onBlur={(val) => handleUpdate(row.id, field, val)}
                   />
+                    )}
+                  </td>
                 ))}
-                {/* Excess Column */}
-            <td className="border">{row.excess}</td>
-                {/* After Excess */}
-                {afterExcessFields.map((field) => (
-                  <EditableCell
-                    key={`${row.id}-${field}`}
-                    value={row[field]}
-                    onBlur={(val) => handleUpdate(row.id, field, val)}
-                  />
-                ))}
-                {/* /* Comp to Master Plan - calculated percentage */}
-            <td className="border">{row.comp_to_master_plan}%</td>
               </tr>
             ))}
           </tbody>
