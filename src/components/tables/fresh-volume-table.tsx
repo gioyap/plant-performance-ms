@@ -171,8 +171,12 @@ const handleExport = async () => {
                 ] as const
               ).map((field) => (
                  <td key={`${row.date}-${row.size}-${field}`} className="px-4 py-2 border">
-                  <span className="block w-full text-center">
-                    {row[field]}
+                 <span className="block w-full text-center">
+                    {typeof row[field] === "number"
+                      ? field === "comp_to_master_plan"
+                        ? `${Math.round(row[field])}%` // for percent format
+                        : Math.round(row[field])
+                      : row[field]}
                   </span>
                 </td>
               ))}

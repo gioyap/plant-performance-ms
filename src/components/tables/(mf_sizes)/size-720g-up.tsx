@@ -32,33 +32,61 @@ export default function Size720gUpPage() {
     fetchData();
   }, [supabase]);
 
-  const handleUpdate = async (
-    id: number,
-    field: keyof FreshVolumeRow,
-    value: string
-  ) => {
-    const newValue = Number(value);
-    const updatedData = data.map((row) =>
-      row.id === id ? { ...row, [field]: newValue } : row
-    );
-    toast.success("Updated Complete!")
-    setData(updatedData);
+const handleUpdate = async (
+  id: number,
+  field: keyof FreshVolumeRow,
+  value: string
+) => {
+  const newValue = Number(value);
 
-    const { error } = await supabase
-      .from("mf_raw_sizes")
-      .update({ [field]: newValue })
-      .eq("id", id);
+  const updatedData = data.map((row) => {
+    if (row.id !== id) return row;
 
-      if (error) {
-      toast.error("Failed to update value");
-    }
-  };
+    const updatedRow = { ...row, [field]: newValue };
+
+    // ⬇ Calculate excess
+    const excess =
+      updatedRow.actual_received > updatedRow.master_plan
+        ? updatedRow.actual_received - updatedRow.master_plan
+        : 0;
+
+    // ⬇ Calculate % compliance to master plan
+    const comp_to_master_plan =
+      updatedRow.master_plan > 0
+        ? Math.round((updatedRow.actual_received / updatedRow.master_plan) * 100)
+        : 0;
+
+    return {
+      ...updatedRow,
+      excess,
+      comp_to_master_plan,
+    };
+  });
+
+  const changedRow = updatedData.find((r) => r.id === id)!;
+
+  setData(updatedData);
+  toast.success("Updated complete!");
+
+  const { error } = await supabase
+    .from("mf_raw_sizes")
+    .update({
+      [field]: newValue,
+      excess: changedRow.excess,
+      comp_to_master_plan: changedRow.comp_to_master_plan,
+    })
+    .eq("id", id);
+
+  if (error) {
+    toast.error("Failed to update value");
+  }
+};
 
 const handleExport = () => {
   const worksheet = XLSX.utils.json_to_sheet(data || []);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "720g-up");
-  XLSX.writeFile(workbook, "720g-up.xlsx");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "100g-below");
+  XLSX.writeFile(workbook, "100g-below.xlsx");
 };
 
 const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,10 +106,25 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, size: _, ...rest } = row;
         if (!id) return null;
 
+        const excess =
+          row.actual_received > row.master_plan
+            ? row.actual_received - row.master_plan
+            : 0;
+
+        const comp_to_master_plan =
+          row.master_plan > 0
+            ? Math.round((row.actual_received / row.master_plan) * 100)
+            : 0;
+
         const { error } = await supabase
           .from("mf_raw_sizes")
-          .upsert({ id, size: "720g-up", ...rest }, { onConflict: "id" });
-
+          .upsert(   {
+                id,
+                size: "100g-below",
+                ...rest,
+                excess,
+                comp_to_master_plan,
+              }, { onConflict: "id" });
         if (error) {
           console.error(`Failed to import row id ${id}:`, error.message);
           toast.error(`Import failed at row id ${id}`);
@@ -157,13 +200,7 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   />
                 ))}
                 {/* Excess Column */}
-                <td className="border">
-                  {Math.round(
-                    row.actual_received > row.master_plan
-                      ? row.actual_received - row.master_plan
-                      : 0
-                  )}
-                </td>
+            <td className="border">{row.excess}</td>
                 {/* After Excess */}
                 {afterExcessFields.map((field) => (
                   <EditableCell
@@ -173,11 +210,7 @@ const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   />
                 ))}
                 {/* /* Comp to Master Plan - calculated percentage */}
-                <td className="border">
-                  {row.master_plan > 0
-                    ? `${Math.round((row.actual_received / row.master_plan) * 100)}%`
-                    : "0%"}
-                </td>
+            <td className="border">{row.comp_to_master_plan}%</td>
               </tr>
             ))}
           </tbody>
