@@ -1,14 +1,13 @@
 "use client"
 
-import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "../ui/card"
-import { ChartConfig, ChartContainer, ChartLegend,ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "../ui/chart"
-import { createClient } from "@/src/utils/supabase/client"
-import { ChartRow } from "@/src/lib/types"
+import React from "react"
+import { CartesianGrid, LineChart, XAxis, Line } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/src/components/ui/chart"
+import { ChartProps } from "@/src/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
+import { Label } from "@/src/components/ui/label"
+import { useRouter } from "next/navigation"
 
 const chartConfig = {
   abp: { label: "ABP", color: "hsl(var(--chart-1))" },
@@ -19,63 +18,64 @@ const chartConfig = {
   advance_prod: { label: "Advance Prod", color: "hsl(var(--chart-6))" },
   safekeep: { label: "Safekeep", color: "hsl(var(--chart-7))" },
   comp_to_master_plan: { label: "Comp to MPlan", color: "hsl(var(--chart-8))" },
-} satisfies ChartConfig
+}
 
-export function FreshVolumeChart() {
-  const [data, setData] = React.useState<ChartRow[]>([])
-
-  const fetchChartData = async () => {
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from("mf_raw_sizes")
-      .select("date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan")
-      .eq("size", "total_volume")
-      .order("date", { ascending: true })
-
-    if (error) {
-      console.error("Failed to fetch chart data:", error.message)
-    } else {
-            const monthOrder = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ]
-      const sortedData = (data as ChartRow[]).sort((a, b) =>
-        monthOrder.indexOf(a.date) - monthOrder.indexOf(b.date)
-      )
-
-      setData(sortedData)
-          }
-  }
-  React.useEffect(() => {
-    fetchChartData()
-  }, [])
+export default function ChartPeriodPage({ period, year, data }: ChartProps) {
+  const router = useRouter();
 
   return (
-    <Card className="w-full max-h-96">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1 text-center sm:text-left">
-          <CardTitle>Raw Mat Volume</CardTitle>
-          <CardDescription>
-            Showing total computation of Volume this year
-          </CardDescription>
+    <Card className="w-full max-h-[500px]">
+      <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle>Raw Mat Volume ({period})</CardTitle>
+          <CardDescription>Data for year: {year}</CardDescription>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-center">
+          <div>
+            <Label htmlFor="period">Select Period:</Label>
+            <Select
+              value={period}
+              onValueChange={(val) => router.push(`/rm-volume/${val}/${year}`)}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="year">Select Year:</Label>
+            <Select
+              value={year.toString()}
+              onValueChange={(val) => router.push(`/rm-volume/${period}/${val}`)}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 6 }).map((_, idx) => {
+                  const y = 2020 + idx;
+                  return (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="px-2 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
-          <AreaChart data={data}>
-            <defs>
-              {Object.keys(chartConfig).map((key) => (
-                <linearGradient id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1" key={key}>
-                  <stop offset="5%" stopColor={`var(--color-${key})`} stopOpacity={0.8} />
-                  <stop offset="95%" stopColor={`var(--color-${key})`} stopOpacity={0.1} />
-                </linearGradient>
-              ))}
-            </defs>
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+          <LineChart data={data} margin={{ left: 12, right: 12 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
@@ -94,18 +94,19 @@ export function FreshVolumeChart() {
               }
             />
             {Object.keys(chartConfig).map((key) => (
-              <Area
+              <Line
                 key={key}
                 dataKey={key}
-                type="natural"
-                fill={`url(#fill-${key})`}
+                type="monotone"
                 stroke={`var(--color-${key})`}
+                strokeWidth={2}
+                dot={false}
               />
             ))}
             <ChartLegend content={<ChartLegendContent />} />
-          </AreaChart>
+          </LineChart>
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -36,7 +36,7 @@ export default function MainSidebar() {
       children: [
         {
           label: "Total Fresh Volume",
-          href: "/fresh-volume",
+          href: "/rm-volume/monthly/2024",
         },
       ],
     },

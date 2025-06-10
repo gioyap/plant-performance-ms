@@ -1,18 +1,9 @@
 import { JSX } from "react";
 
-export interface FreshVolumeRow {
-  id: number;
-  date: string;
-  abp: number;
-  master_plan: number;
-  actual_received: number;
-  w_requirements: number;
-  excess: number;
-  advance_prod: number;
-  safekeep: number;
-  comp_to_master_plan: number;
-  size: string;
-}
+export type EditableCellProps = {
+  value: number;
+  onBlur: (val: string) => void;
+};
 
 export interface RMVolumeRow {
   id: number;
@@ -20,18 +11,6 @@ export interface RMVolumeRow {
   totalrm: number;
   lastabp: number;
   lasttotalrm: number;
-}
-
-export interface ChartRow {
-  date: string
-  abp: number
-  master_plan: number
-  actual_received: number
-  w_requirements: number
-  excess: number
-  advance_prod: number
-  safekeep: number
-  comp_to_master_plan: number
 }
 
 export interface Links {
@@ -44,4 +23,38 @@ export interface Links {
     href: string;
     icon?: JSX.Element;
   }[];
+}
+
+export interface Props {
+  data: MfRawSizeRow[];
+  period: string;
+  year: number;
+}
+
+export type ChartProps = {
+  period: string;
+  year: number;
+  setYear: (val: number) => void;
+  data: MfRawSizeRow[];
+};
+
+
+export interface MfRawSizeTableProps {
+  size: string;
+  period: string;
+  year: number;
+}
+
+export interface MfRawSizeRow {
+  id: number;
+  period_date: string;
+  abp: number;
+  master_plan: number;
+  actual_received: number;
+  w_requirements: number;
+  excess: number;
+  advance_prod: number;
+  safekeep: number;
+  comp_to_master_plan: number;
+  size: string;
 }

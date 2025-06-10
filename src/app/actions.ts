@@ -19,7 +19,7 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return redirect("/fresh-volume");
+  return redirect("/rm-volume/monthly/2024");
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
