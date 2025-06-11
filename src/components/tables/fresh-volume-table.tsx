@@ -13,86 +13,90 @@ import { allFields, formatPeriodDate } from "../core/editablecell";
 export default function FreshVolumeTable({ data, period, year }: Props) {
   const supabase = createClient();
 
-  // Update total_volume rows from input data
   useEffect(() => {
-    const updateTotalVolume = async () => {
-      const { data, error } = await supabase
+    const generateTotalVolumeIfAllSizesPresent = async () => {
+
+      const { data: allRows, error } = await supabase
         .from("mf_raw_sizes")
-        .select("period_date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, size")
+        .select("*")
+        .eq("period_type", period)
+        .eq("period_year", year)
         .neq("size", "total_volume");
 
       if (error) {
-        console.error("Failed to fetch input rows:", error.message);
+        console.error("Error fetching rows:", error.message);
         return;
       }
 
-      const rows = data as Omit<MfRawSizeRow, "id" | "comp_to_master_plan">[];
+      const groupedByDate: Record<string, MfRawSizeRow[]> = {};
 
-      const totalsByDate: Record<string, Omit<MfRawSizeRow, "id">> = {};
-
-      for (const row of rows) {
-        const { period_date } = row;
-
-        if (!totalsByDate[period_date]) {
-          totalsByDate[period_date] = {
-            period_date,
-            size: "total_volume",
-            abp: 0,
-            master_plan: 0,
-            actual_received: 0,
-            w_requirements: 0,
-            excess: 0,
-            advance_prod: 0,
-            safekeep: 0,
-            comp_to_master_plan: 0,
-          };
-        }
-
-        for (const key of [
-          "abp",
-          "master_plan",
-          "actual_received",
-          "w_requirements",
-          "excess",
-          "advance_prod",
-          "safekeep",
-        ] as const) {
-          totalsByDate[period_date][key] += row[key] ?? 0;
-        }
+      for (const row of allRows || []) {
+        const key = row.period_date;
+        if (!groupedByDate[key]) groupedByDate[key] = [];
+        groupedByDate[key].push(row);
       }
 
-      // Add comp_to_master_plan calculation
-      const totalVolumeRows = Object.values(totalsByDate).map((row) => {
-        return {
-          ...row,
-          comp_to_master_plan:
-            row.master_plan > 0
-              ? (row.actual_received / row.master_plan) * 100
-              : 0,
-        };
-      });
+      for (const [period_date, rows] of Object.entries(groupedByDate)) {
+        const uniqueSizes = Array.from(new Set(rows.map((r) => r.size)));
+        const hasAll7Sizes = uniqueSizes.length === 7;
 
-      for (const row of totalVolumeRows) {
-        const isEmpty = Object.entries(row).every(([_, val]) =>
-          typeof val === "number" ? val === 0 : true
-        );
-        if (isEmpty) continue;
+        if (!hasAll7Sizes) continue;
 
-        const { error: upsertError } = await supabase
+        // Check if total_volume already exists
+        const { data: existingTotal } = await supabase
           .from("mf_raw_sizes")
-          .upsert(row, { onConflict: "period_date,size" });
+          .select("id")
+          .eq("period_type", period)
+          .eq("period_year", year)
+          .eq("period_date", period_date)
+          .eq("size", "total_volume")
+          .limit(1);
 
-        if (upsertError) {
-          console.error(
-            `Upsert failed for ${row.period_date}:`,
-            upsertError.message
-          );
+        if (existingTotal && existingTotal.length > 0) continue;
+
+        // Sum all values
+        const totals = {
+          abp: 0,
+          master_plan: 0,
+          actual_received: 0,
+          w_requirements: 0,
+          excess: 0,
+          advance_prod: 0,
+          safekeep: 0,
+        };
+
+        rows.forEach((row) => {
+          for (const key in totals) {
+            totals[key as keyof typeof totals] += row[key as keyof typeof totals] ?? 0;
+          }
+        });
+
+        const comp_to_master_plan =
+          totals.master_plan > 0
+            ? (totals.actual_received / totals.master_plan) * 100
+            : 0;
+
+        const upsertResult = await supabase.from("mf_raw_sizes").upsert({
+          size: "total_volume",
+          period_date,
+          period_type: period,
+          period_year: year,
+          ...totals,
+          comp_to_master_plan,
+          }, {
+        onConflict: "period_date,size", // 👈 key part
+          });
+
+        if (upsertResult.error) {
+          console.error(`Failed to insert total_volume for ${period_date}`, upsertResult.error.message);
+        } else {
+          console.log(`Inserted total_volume for ${period_date}`);
         }
       }
     };
 
-    updateTotalVolume();
-  }, [supabase]);
+    generateTotalVolumeIfAllSizesPresent();
+  }, [supabase, period, year]);
 
   const handleExport = async () => {
     const { data, error } = await supabase

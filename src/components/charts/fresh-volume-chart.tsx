@@ -58,9 +58,9 @@ export default function ChartPeriodPage({ period, year, data }: ChartProps) {
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 6 }).map((_, idx) => {
-                  const y = 2020 + idx;
+              <SelectContent className="max-h-60 overflow-y-scroll">
+                {Array.from({ length: 41 }).map((_, idx) => {
+                  const y = 2010 + idx;
                   return (
                     <SelectItem key={y} value={y.toString()}>
                       {y}

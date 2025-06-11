@@ -44,13 +44,53 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
 
   if (loading) return <SkeletonLoading />;
 
-  if (data.length === 0) {
-    return (
-      <div className="text-center text-dark4 py-4">
-        No data for <strong>{size}</strong> in <strong>{period}</strong> ({year}).
-      </div>
-    );
+  const handleAddRow = async () => {
+  // Get existing row count for this size, year, and period
+  const { data: existing, error } = await supabase
+    .from("mf_raw_sizes")
+    .select("period_date")
+    .eq("size", size)
+    .eq("period_type", period)
+    .eq("period_year", year);
+
+  if (error) {
+    console.error("Error checking existing rows:", error.message);
+    return;
   }
+
+  const currentCount = existing?.length || 0;
+
+  // Limit: 12 rows for monthly
+  if (period === "monthly" && currentCount >= 12) {
+    toast.error("You can only add up to 12 rows for monthly period.");
+    return;
+  }
+
+  // Generate next period_date (e.g. 2025-03-31)
+  const period_date = new Date(Date.UTC(Number(year), currentCount + 1, 0));
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("mf_raw_sizes")
+    .insert([
+      {
+        size,
+        period_date,
+        period_year: year,
+        period_type: period,
+      },
+    ])
+    .select("*"); // You can also use `returning: "representation"` if needed
+
+  if (insertError) {
+    console.error("Error inserting row:", insertError.message);
+    return;
+  }
+
+  // Optional: Update local state if your table supports it
+  if (inserted && inserted.length > 0) {
+    setData((prev) => [...prev, inserted[0]]);
+  }
+};
 
   const handleUpdate = async (
     id: number,
@@ -173,6 +213,7 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
               <DropdownMenuLabel>Table Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleAddRow}>+ Add Row</DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <FileInputWrapper>
