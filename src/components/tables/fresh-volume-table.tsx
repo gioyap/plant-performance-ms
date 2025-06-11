@@ -17,7 +17,7 @@ export default function FreshVolumeTable({ data, period, year }: Props) {
     const generateTotalVolumeIfAllSizesPresent = async () => {
 
       const { data: allRows, error } = await supabase
-        .from("mf_raw_sizes")
+        .from("mf_rm_volume")
         .select("*")
         .eq("period_type", period)
         .eq("period_year", year)
@@ -37,14 +37,9 @@ export default function FreshVolumeTable({ data, period, year }: Props) {
       }
 
       for (const [period_date, rows] of Object.entries(groupedByDate)) {
-        const uniqueSizes = Array.from(new Set(rows.map((r) => r.size)));
-        const hasAll7Sizes = uniqueSizes.length === 7;
-
-        if (!hasAll7Sizes) continue;
-
         // Check if total_volume already exists
         const { data: existingTotal } = await supabase
-          .from("mf_raw_sizes")
+          .from("mf_rm_volume")
           .select("id")
           .eq("period_type", period)
           .eq("period_year", year)
@@ -76,7 +71,7 @@ export default function FreshVolumeTable({ data, period, year }: Props) {
             ? (totals.actual_received / totals.master_plan) * 100
             : 0;
 
-        const upsertResult = await supabase.from("mf_raw_sizes").upsert({
+        const upsertResult = await supabase.from("mf_rm_volume").upsert({
           size: "total_volume",
           period_date,
           period_type: period,
@@ -100,7 +95,7 @@ export default function FreshVolumeTable({ data, period, year }: Props) {
 
   const handleExport = async () => {
     const { data, error } = await supabase
-      .from("mf_raw_sizes")
+      .from("mf_rm_volume")
       .select("period_date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan, size")
       .eq("size", "total_volume")
       .eq("period_type", period)

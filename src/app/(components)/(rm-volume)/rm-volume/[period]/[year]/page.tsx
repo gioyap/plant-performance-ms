@@ -22,7 +22,7 @@ export default function FreshVolumePage() {
     const supabase = createClient();
 
     const { data, error } = await supabase
-      .from("mf_raw_sizes")
+      .from("mf_rm_volume")
       .select("period_date, abp, master_plan, actual_received, w_requirements, excess, advance_prod, safekeep, comp_to_master_plan")
       .eq("size", "total_volume")
       .eq("period_type", period)

@@ -84,7 +84,7 @@ export default function MainSidebar() {
 const Logo = () => {
   return (
     <a
-      href="/fresh-volume"
+      href="/rm-volume/monthly/2024"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white"
     >
       <img src="/favicon.ico" alt="FFI PPMS Logo" className="h-6 w-6" />
@@ -102,7 +102,7 @@ const Logo = () => {
 const LogoIcon = () => {
   return (
     <a
-      href="/fresh-volume"
+      href="/rm-volume/monthly/2024"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black dark:text-white"
     >
       <img src="/favicon.ico" alt="FFI PPMS Logo" className="h-6 w-6" />

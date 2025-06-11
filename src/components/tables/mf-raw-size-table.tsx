@@ -22,7 +22,7 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
       setLoading(true);
 
       const { data, error } = await supabase
-        .from("mf_raw_sizes")
+        .from("mf_rm_volume")
         .select("*")
         .eq("period_type", period)
         .eq("period_year", year)
@@ -44,10 +44,9 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
 
   if (loading) return <SkeletonLoading />;
 
-  const handleAddRow = async () => {
-  // Get existing row count for this size, year, and period
+const handleAddRow = async () => {
   const { data: existing, error } = await supabase
-    .from("mf_raw_sizes")
+    .from("mf_rm_volume")
     .select("period_date")
     .eq("size", size)
     .eq("period_type", period)
@@ -60,17 +59,35 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
 
   const currentCount = existing?.length || 0;
 
-  // Limit: 12 rows for monthly
+  // Limit based on period type
   if (period === "monthly" && currentCount >= 12) {
     toast.error("You can only add up to 12 rows for monthly period.");
     return;
   }
+  if (period === "weekly" && currentCount >= 52) {
+    toast.error("You can only add up to 52 rows for weekly period.");
+    return;
+  }
+  if (period === "daily" && currentCount >= 366) {
+    toast.error("You can only add up to 366 rows for daily period.");
+    return;
+  }
 
-  // Generate next period_date (e.g. 2025-03-31)
-  const period_date = new Date(Date.UTC(Number(year), currentCount + 1, 0));
+  let period_date: Date;
+
+  if (period === "monthly") {
+    // Last day of the month
+    period_date = new Date(Date.UTC(Number(year), currentCount + 1, 0));
+  } else if (period === "weekly") {
+    // Sunday as the end of the week
+    period_date = new Date(Date.UTC(Number(year), 0, 1 + currentCount * 7 + 6));
+  } else {
+    // Daily — just increment by number of days
+    period_date = new Date(Date.UTC(Number(year), 0, 1 + currentCount));
+  }
 
   const { data: inserted, error: insertError } = await supabase
-    .from("mf_raw_sizes")
+    .from("mf_rm_volume")
     .insert([
       {
         size,
@@ -79,7 +96,7 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
         period_type: period,
       },
     ])
-    .select("*"); // You can also use `returning: "representation"` if needed
+    .select("*");
 
   if (insertError) {
     console.error("Error inserting row:", insertError.message);
@@ -129,7 +146,7 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
     toast.success("Updated complete!");
   
     const { error } = await supabase
-      .from("mf_raw_sizes")
+      .from("mf_rm_volume")
       .update({
         [field]: newValue,
         excess: changedRow.excess,
@@ -177,7 +194,7 @@ export default function MfRawSizeTable({ size, period, year }: MfRawSizeTablePro
               : 0;
   
           const { error } = await supabase
-            .from("mf_raw_sizes")
+            .from("mf_rm_volume")
             .upsert(   {
                   id,
                   size: "100g-below",
