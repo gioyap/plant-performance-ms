@@ -3,6 +3,7 @@ import { JSX } from "react";
 export type EditableCellProps = {
   value: number;
   onBlur: (val: string) => void;
+  editable: boolean;
 };
 
 export interface RMVolumeRow {
@@ -45,6 +46,8 @@ export interface MfRawSizeTableProps {
   year: number;
 }
 
+
+
 export interface MfRawSizeRow {
   id: number;
   period_date: string;
@@ -57,4 +60,8 @@ export interface MfRawSizeRow {
   safekeep: number;
   comp_to_master_plan: number;
   size: string;
+  del_code: string;
+  qty: number;
+  wt: number;
+  period_year: string;
 }

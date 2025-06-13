@@ -1,6 +1,6 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
-import { EditableCellProps } from "@/src/lib/types";
+import { EditableCellProps, MfRawSizeRow } from "@/src/lib/types";
 
 export function formatPeriodDate(dateStr: string, period: string) {
   const date = parseISO(dateStr);
@@ -21,14 +21,27 @@ export const allFields = [
   "comp_to_master_plan", // non-editable with %
 ] as const;
 
-const EditableCell: React.FC<EditableCellProps> = ({ value, onBlur }) => {
+export const getDisplayFields = (period: string): Array<keyof MfRawSizeRow> => {
+  if (period === "daily") return ["del_code", "qty", "wt", "size"];
+  return ["qty", "wt", "size"];
+};
+
+const EditableCell: React.FC<EditableCellProps> = ({ value, onBlur, editable = true }) => {
+  if (!editable) {
+    return (
+      <span className="block text-center">
+        {typeof value === "number" ? Math.round(value) : value}
+      </span>
+    );
+  }
+
   return (
-      <input
-        type="number"
-        defaultValue={Math.round(value)}
-        onBlur={(e) => onBlur(e.target.value)}
-        className="w-full text-center bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-orange-400"
-      />
+    <input
+      type="number"
+      defaultValue={Math.round(value)}
+      onBlur={(e) => onBlur(e.target.value)}
+      className="w-full text-center bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+    />
   );
 };
 

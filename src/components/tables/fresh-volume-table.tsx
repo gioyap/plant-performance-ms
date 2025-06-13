@@ -124,9 +124,10 @@ export default function FreshVolumeTable({ data, period, year }: Props) {
             <DropdownMenuLabel>Table Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href={`/rm-volume/${period}/${year}/size?tab=100g-below`}>
-                <DropdownMenuItem>Modify</DropdownMenuItem>
-              </Link>
+              <DropdownMenuItem>Add Entry</DropdownMenuItem>            
+                <Link href={`/rm-volume/${period}/${year}/size?tab=100g-below`}>
+                  <DropdownMenuItem>View Record</DropdownMenuItem>
+                </Link>
               <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
