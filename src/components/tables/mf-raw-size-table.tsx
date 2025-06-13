@@ -221,7 +221,7 @@ const handleAddRow = async () => {
   return (
     <Card className="p-4 w-full overflow-x-auto">
        <div className="flex justify-between items-center mb-4">
-          <p className="text-xs italic text-gray-500 dark:text-gray-400 font-semibold">100g-260g</p>
+          <p className="text-xs italic text-gray-500 dark:text-gray-400 font-semibold">{size}</p>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">Actions</Button>
